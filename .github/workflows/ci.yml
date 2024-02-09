@@ -8,10 +8,38 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  test_glibc_gcc:
     runs-on: ubuntu-latest
     container: gcc:latest
 
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
       - uses: ./.github/actions/regression_tests
+        with:
+          artifact-name: regression-test-results_glibc_gcc
+
+  test_musl_gcc:
+    runs-on: ubuntu-latest
+    container: alpine:latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install build and test environment
+        run: |
+          apk add bash git musl-dev gcc make python3 py-pip
+      - name: Show Python version
+        run: |
+          python --version
+      - name: Configure pip to break system packages
+        run: |
+          mkdir -p ~/.config/pip
+          cat <<EOT >> ~/.config/pip/pip.conf
+          [global]
+          break-system-packages = true
+          EOT
+      - uses: ./.github/actions/regression_tests
+        with:
+          artifact-name: regression-test-results_musl_gcc
